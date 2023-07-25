@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../model/book.dart';
+import '../util/book_router_delegate.dart';
 
 class BookDetailPage extends Page {
   BookDetailPage(this.book);
@@ -9,7 +10,6 @@ class BookDetailPage extends Page {
   @override
   Route createRoute(BuildContext context) {
     return MaterialPageRoute(
-      settings: this,
       builder: (context) {
         return Scaffold(
           appBar: AppBar(),

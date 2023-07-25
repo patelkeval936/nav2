@@ -1,26 +1,27 @@
 import 'package:nav2/nav2/model/book.dart';
 import 'package:nav2/nav2/model/book_route_path.dart';
 import 'package:flutter/material.dart';
-import 'package:nav2/nav2/view/book_detail_screen.dart';
 import 'package:nav2/nav2/view/books_list_screen.dart';
+
+
+List<Book> books = [
+  Book('Stranger in a Strange Land', 'Robert A. Heinlein'),
+  Book('Foundation', 'Isaac Asimov'),
+  Book('Fahrenheit 451', 'Ray Bradbury'),
+];
+
 
 class BookRouterDelegate extends RouterDelegate<BookRoutePath> with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {
   Book? _selectedBook;
   bool show404 = false;
+  List  stocks = ['a','b'];
 
   final GlobalKey<NavigatorState> key = GlobalKey<NavigatorState>();
 
-  List<Book> books = [
-    Book('Stranger in a Strange Land', 'Robert A. Heinlein'),
-    Book('Foundation', 'Isaac Asimov'),
-    Book('Fahrenheit 451', 'Ray Bradbury'),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    print('Route Delegate : build');
-    print('     selected book : ${_selectedBook?.title}');
     return Navigator(
+      // onGenerateInitialRoutes: (){},
       key: key,
       pages: [
         MaterialPage(
@@ -32,24 +33,24 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath> with ChangeNotifi
             },
           ),
         ),
-        if(_selectedBook != null) BookDetailPage(_selectedBook!),
-        // if (_selectedBook != null) MaterialPage(
-        //     child: Scaffold(
-        //       appBar: AppBar(),
-        //       body: Padding(
-        //         padding: const EdgeInsets.all(8.0),
-        //         child: Column(
-        //           crossAxisAlignment: CrossAxisAlignment.start,
-        //           children: [
-        //             if (_selectedBook != null) ...[
-        //               Text(_selectedBook!.title),
-        //               Text(_selectedBook!.author),
-        //             ],
-        //           ],
-        //         ),
-        //       ),
-        //     )
-        // ),
+        if (_selectedBook != null && show404 == false) MaterialPage(
+          key: ValueKey(_selectedBook),
+            child: Scaffold(
+              appBar: AppBar(),
+              body: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_selectedBook != null) ...[
+                      Text(_selectedBook!.title),
+                      Text(_selectedBook!.author),
+                    ],
+                  ],
+                ),
+              ),
+            )
+        ),
         if (show404 && _selectedBook == null)
           MaterialPage(
               child: Center(
@@ -58,13 +59,12 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath> with ChangeNotifi
           )))
       ],
       onPopPage: (route, result) {
-        print('Route Delegate : on pop page');
         if (!route.didPop(result)) {
           return false;
         }
         _selectedBook = null;
         notifyListeners();
-        return true;
+        return false;
       },
     );
   }
@@ -74,37 +74,44 @@ class BookRouterDelegate extends RouterDelegate<BookRoutePath> with ChangeNotifi
 
   @override
   BookRoutePath get currentConfiguration {
-    print('Route Delegate : get current configuration');
 
     if (show404) {
       return BookRoutePath.showError();
     } else if (_selectedBook == null) {
-      print('     selected book = null');
       return BookRoutePath.home();
     } else {
-      print('     selected book = ${_selectedBook?.title} and index is ${books.indexOf(_selectedBook!)}');
       return BookRoutePath.detail(books.indexOf(_selectedBook!));
     }
   }
 
   @override
   Future<void> setNewRoutePath(BookRoutePath configuration) async {
-    print('Route Delegate : set new route path');
-    print('     config is Homepage : ${configuration.isHomePage}, DetailPage : ${configuration.isDetailPage}, id : ${configuration.id}');
+
+    if (configuration.isError) {
+      show404 = true;
+      _selectedBook = null;
+      notifyListeners();
+    }
+
+    if(configuration.id != null){
+      if(configuration.id! < 0 || configuration.id! > books.length - 1){
+        show404 = true;
+        _selectedBook = null;
+        notifyListeners();
+      }
+    }
+
+    if (configuration.isDetailPage) {
+      show404 = false;
+      _selectedBook = books[configuration.id!];
+      notifyListeners();
+    }
 
     if (!configuration.isError && !configuration.isDetailPage) {
       show404 = false;
       _selectedBook = null;
-    }
-
-    if (configuration.isError) {
-      show404 = true;
-    }
-
-    if (configuration.isDetailPage) {
-      _selectedBook = books[configuration.id!];
       notifyListeners();
-      print('*******${_selectedBook?.title}********');
     }
+
   }
 }
